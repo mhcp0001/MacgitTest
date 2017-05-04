@@ -4,93 +4,270 @@
 #define BEAT 30 //音の長さを指定
 #define PRESS 250
 
-const int led_pin = 7;
+const int buttonPin = 7;
 const int C_pin = 1;
 const int D_pin = 2;
 const int E_pin = 3;
 const int F_pin = 4;
 const int G_pin = 5;
-unsigned long time_m =0;
-int push = 0;
+const int Bee[2][8]={{G_pin,F_pin,E_pin,D_pin,E_pin,F_pin,D_pin,C_pin},
+{0,600,1200,2400,2700,3000,3300,3600}};
+int play_notes[2][8];
 
+unsigned long time_m = 0;
+unsigned long push_time = 0;
+int push = 0;
 int C_value = 0;
 int D_value = 0;
 int E_value = 0;
 int F_value = 0;
 int G_value = 0;
+
+boolean mode = 0;
+boolean fullcombo=true;
+int buttonState=0;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(57600);
   // initialize digital pin 8 as an output. 
-  pinMode(led_pin, OUTPUT);
+  pinMode(buttonPin, INPUT);
 }
 
-int mode = 0;
 
 void loop() {
  // put your main code here, to run repeatedly:
+  buttonState = digitalRead(buttonPin);
   C_value = analogRead( C_pin );
   D_value = analogRead( D_pin );
   E_value = analogRead( E_pin );
   F_value = analogRead( F_pin );
   G_value = analogRead( G_pin );
 
-  analogWrite(led_pin, C_value/4 );
+  //analogWrite(led_pin, C_value/4 );
   //Serial.println( byte(C_value/4) );
   time_m=millis();
 
+  if (buttonState == HIGH) {
+    mode = 1;
+  } 
   if(C_value<PRESS){
-    tone(PINSP,NOTE_C6,BEAT) ;  // ド
+//    tone(PINSP,NOTE_C6,BEAT) ;  // ド
     if(push == 0){
       Serial.print("NOTE_C pushed:");
       Serial.println(time_m);
-      push = 1;
+      push = C_pin;
     }
      //delay(BEAT*2) ;
   }else if(D_value<PRESS){
-    tone(PINSP,NOTE_D6,BEAT) ;  // レ
+//    tone(PINSP,NOTE_D6,BEAT) ;  // レ
     if(push == 0){
       Serial.print("NOTE_D pushed:");
       Serial.println(time_m);
-      push = 1;
+      push = D_pin;
     }
     //delay(BEAT*2) ;
   }else if(E_value<PRESS){
-    tone(PINSP,NOTE_E6,BEAT) ;  // ミ
+//    tone(PINSP,NOTE_E6,BEAT) ;  // ミ
     if(push == 0){
       Serial.print("NOTE_E pushed:");
       Serial.println(time_m);
-      push = 1;
+      push = E_pin;
     }
     //delay(BEAT*2) ;
   }else if(F_value<PRESS){
-    tone(PINSP,NOTE_F6,BEAT) ;  // ファ
+//    tone(PINSP,NOTE_F6,BEAT) ;  // ファ
     if(push == 0){
       Serial.print("NOTE_F pushed:");
       Serial.println(time_m);
-      push = 1;
+      push = F_pin;
     }
     //delay(BEAT*2) ;
   }else if(G_value<PRESS){
-    tone(PINSP,NOTE_G6,BEAT) ;  // ソ
+//    tone(PINSP,NOTE_G6,BEAT) ;  // ソ
     if(push == 0){
       Serial.print("NOTE_G pushed:");
       Serial.println(time_m);
-      push = 1;
+      push = G_pin;
     }
     //delay(BEAT*2) ;
-  }else if(push==1){
+  }else if(push!=0){
     Serial.print("Button relese:");
     Serial.println(time_m);
     push = 0; 
   }
 
-  if(mode == 1){
+  if(mode == true){
     game();
   }
-
 }
 
 void game(){
+  static boolean start = false;
+  static int note_number = 0;
+  static int start_time = 0;
+  static boolean long_note = false;
+  
+  if(start == false){ //開始時メトロノーム音、スタート時の時刻
+    Serial.print("Game Start!:");
+    Serial.println(time_m);
+    delay(595);
+    tone(PINSP,NOTE_G2,100) ;  // ソ
+    Serial.println("1");
+    delay(595);
+    tone(PINSP,NOTE_G2,100) ;  // ソ
+    Serial.println("2");
+    delay(595);
+    tone(PINSP,NOTE_G2,100) ;  // ソ
+    Serial.println("3");
+    delay(595);
+    tone(PINSP,NOTE_G2,100) ;  // ソ
+    Serial.println("4");
+    delay(595);
+    start_time = millis();
+    start = true;
+    }else if(push!=0 && long_note==false){ //押した瞬間の処理(どれをいつ押したか)
+    play_notes[0][note_number]=push;
+    play_notes[1][note_number]=time_m-start_time-Bee[1][note_number]; 
+    long_note=true;
+    note_number++;
+  }else if(push==0){ //鍵盤から指を離した際の処理
+    long_note=false;
+  }
+
+  if(note_number == 8){ //終了処理
+    Serial.print("start_time:");
+    Serial.println(start_time);
+    music(judge(start_time));
+    Serial.println("play_notes[0]:");
+    for(int i=0;i<8;i++){
+      Serial.println(play_notes[0][i]);
+    }
+    Serial.println("play_notes[1]:");
+    for(int i=0;i<8;i++){
+      Serial.println(play_notes[1][i]);
+    }
+    start = false;
+    note_number = 0;
+    mode = false;
+  }
+}
+
+int judge(int s_time){
+  unsigned int error=0;
+  for(int i=0;i<8;i++){
+    error+=abs(play_notes[1][i]);
+    if(play_notes[0][i]!=Bee[0][i]){
+      error += 600;
+      fullcombo=false;
+    }
+  }
+
+  
+  Serial.print("Error:");
+  Serial.println(error);
+  float errp = (float)error/4800;
+  Serial.print("ErrorP:");
+  Serial.println(errp);
+  float per = 1-errp;
+  Serial.print("%:");
+  Serial.println(per);
+  if(per>=0.95){
+    return 6; //RANK S
+  }else if(per>=0.90){
+    return 5; //RANK AAA
+  }else if(per>=0.85){
+    return 4;  //RANK AA
+  }else if(per>=0.80){
+    return 3;  //RANK A
+  }else if(per>=0.70){
+    return 2;  //RANK B
+  }else if(per>=0.60){
+    return 1;  //RANK C
+  }else{
+    return 0;  //RANK F
+  }
+}
+
+void music(int music){
+  if(fullcombo==true){
+    tone(PINSP,NOTE_E6,100) ;
+    delay(295);
+    tone(PINSP,NOTE_G6,100) ;
+    delay(295);
+    tone(PINSP,NOTE_C7,100) ;
+    delay(295);
+  }
+  delay(1200);
+  switch(music){
+    case 6:
+      tone(PINSP,NOTE_C6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_D6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_E6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_F7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_G6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_A6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_B6,100) ;
+      delay(145);
+      tone(PINSP,NOTE_C7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_D7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_E7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_F7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_G7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_A7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_B7,100) ;
+      delay(145);
+      tone(PINSP,NOTE_C8,100) ;
+      delay(145);
+      break;
+
+    case 5:
+
+//      break;
+    case 4:
+
+//      break;    
+
+    case 3:
+
+//      break;
+    case 2:
+
+//      break;
+    case 1:
+      tone(PINSP,NOTE_C6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_E6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_G6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_C7,100) ;
+      delay(295);      
+      tone(PINSP,NOTE_C6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_E6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_G6,100) ;
+      delay(295);
+      tone(PINSP,NOTE_C7,100) ;
+      delay(295);
+      break;
+    case 0:
+    
+      break;
+  }
   
 }
+
