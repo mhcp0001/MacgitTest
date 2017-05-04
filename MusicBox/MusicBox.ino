@@ -23,6 +23,8 @@ void setup() {
   pinMode(led_pin, OUTPUT);
 }
 
+int mode = 0;
+
 void loop() {
  // put your main code here, to run repeatedly:
   C_value = analogRead( C_pin );
@@ -32,7 +34,6 @@ void loop() {
   G_value = analogRead( G_pin );
 
   analogWrite(led_pin, C_value/4 );
-
   Serial.println( byte(C_value/4) );
 
   if(C_value<PRESS){
@@ -50,6 +51,10 @@ void loop() {
   }else if(G_value<PRESS){
     tone(PINSP,NOTE_G6,BEAT) ;  // ソ
     //delay(BEAT*2) ;
+  }
+
+  if(mode == 1){
+    
   }
 
 }
