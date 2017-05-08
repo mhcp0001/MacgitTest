@@ -161,6 +161,11 @@ void game(){
     for(int i=0;i<8;i++){
       Serial.println(play_notes[1][i]);
     }
+
+    lcd.setCursor(0, 0);
+    lcd.print("                ");
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
     start = false;
     fullcombo=true;
     note_number = 0;
@@ -185,28 +190,42 @@ int judge(int s_time){
   Serial.print("ErrorP:");
   Serial.println(errp);
   float per = 1-errp;
+  if(per<0){
+    per=0;
+  }
   Serial.print("%:");
   Serial.println(per*100);
+  lcd.setCursor(10, 1); 
+  lcd.print(per*100);
+  lcd.print("%");
+  lcd.setCursor(0, 0);
   if(per>=0.95){
     Serial.println("RANK:S");
+    lcd.print("  S RANK CLEAR!!");
     return 6; //RANK S
   }else if(per>=0.90){
     Serial.println("RANK:AAA");
+    lcd.print("AAA RANK CLEAR!!");
     return 5; //RANK AAA
   }else if(per>=0.85){
     Serial.println("RANK:AA");
+    lcd.print(" AA RANK CLEAR!!");
     return 4;  //RANK AA
   }else if(per>=0.80){
     Serial.println("RANK:A");
+    lcd.print("  A RANK CLEAR!!");
     return 3;  //RANK A
   }else if(per>=0.70){
     Serial.println("RANK:B");
+    lcd.print("  B RANK CLEAR!!");
     return 2;  //RANK B
   }else if(per>=0.60){
     Serial.println("RANK:C");
+    lcd.print("  C RANK CLEAR!!");
     return 1;  //RANK C
   }else{
     Serial.println("RANK:F");
+    lcd.print("  FAILED");
     return 0;  //RANK F
   }
 }
@@ -214,7 +233,8 @@ int judge(int s_time){
 void music(int music){
   if(fullcombo==true){
     delay(195);
-    Serial.println("FULLCOMBO!!!");
+    lcd.setCursor(0, 1);
+    Serial.println("FULLCOMBO");
     tone(PINSP,NOTE_E6,100) ;
     delay(95);
     tone(PINSP,NOTE_G6,100) ;
