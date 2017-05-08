@@ -1,9 +1,12 @@
 #include <pitches.h> // < > で囲む
+#include <Wire.h>
+#include "rgb_lcd.h"
 
 #define PINSP 8  //圧電スピーカーのピン番号
 #define BEAT 30 //音の長さを指定
-#define PRESS 250
+#define PRESS 1000
 
+rgb_lcd lcd;
 const int buttonPin = 7;
 const int C_pin = 1;
 const int D_pin = 2;
@@ -30,6 +33,8 @@ int buttonState=0;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(57600);
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
   // initialize digital pin 8 as an output. 
   pinMode(buttonPin, INPUT);
 }
@@ -52,15 +57,16 @@ void loop() {
     mode = 1;
   } 
   if(C_value<PRESS){
-//    tone(PINSP,NOTE_C6,BEAT) ;  // ド
+    tone(PINSP,NOTE_C6,BEAT) ;  // ド
     if(push == 0){
       Serial.print("NOTE_C pushed:");
       Serial.println(time_m);
       push = C_pin;
+      
     }
      //delay(BEAT*2) ;
   }else if(D_value<PRESS){
-//    tone(PINSP,NOTE_D6,BEAT) ;  // レ
+    tone(PINSP,NOTE_D6,BEAT) ;  // レ
     if(push == 0){
       Serial.print("NOTE_D pushed:");
       Serial.println(time_m);
@@ -68,7 +74,7 @@ void loop() {
     }
     //delay(BEAT*2) ;
   }else if(E_value<PRESS){
-//    tone(PINSP,NOTE_E6,BEAT) ;  // ミ
+    tone(PINSP,NOTE_E6,BEAT) ;  // ミ
     if(push == 0){
       Serial.print("NOTE_E pushed:");
       Serial.println(time_m);
@@ -76,7 +82,7 @@ void loop() {
     }
     //delay(BEAT*2) ;
   }else if(F_value<PRESS){
-//    tone(PINSP,NOTE_F6,BEAT) ;  // ファ
+    tone(PINSP,NOTE_F6,BEAT) ;  // ファ
     if(push == 0){
       Serial.print("NOTE_F pushed:");
       Serial.println(time_m);
@@ -84,7 +90,7 @@ void loop() {
     }
     //delay(BEAT*2) ;
   }else if(G_value<PRESS){
-//    tone(PINSP,NOTE_G6,BEAT) ;  // ソ
+    tone(PINSP,NOTE_G6,BEAT) ;  // ソ
     if(push == 0){
       Serial.print("NOTE_G pushed:");
       Serial.println(time_m);
@@ -111,21 +117,29 @@ void game(){
   if(start == false){ //開始時メトロノーム音、スタート時の時刻
     Serial.print("Game Start!:");
     Serial.println(time_m);
+    lcd.print("Game Start!:");
+    lcd.setCursor(12, 0);
     delay(595);
     tone(PINSP,NOTE_G2,100) ;  // ソ
+    lcd.print("1");
     Serial.println("1");
     delay(595);
     tone(PINSP,NOTE_G2,100) ;  // ソ
+    lcd.print("2");
     Serial.println("2");
     delay(595);
     tone(PINSP,NOTE_G2,100) ;  // ソ
+    lcd.print("3");
     Serial.println("3");
     delay(595);
     tone(PINSP,NOTE_G2,100) ;  // ソ
+    lcd.print("4");
     Serial.println("4");
-    delay(595);
+    delay(590);
     start_time = millis();
     start = true;
+    lcd.setCursor(0, 0);
+    lcd.print("                ");
     }else if(push!=0 && long_note==false){ //押した瞬間の処理(どれをいつ押したか)
     play_notes[0][note_number]=push;
     play_notes[1][note_number]=time_m-start_time-Bee[1][note_number]; 
@@ -148,6 +162,7 @@ void game(){
       Serial.println(play_notes[1][i]);
     }
     start = false;
+    fullcombo=true;
     note_number = 0;
     mode = false;
   }
@@ -160,10 +175,10 @@ int judge(int s_time){
     if(play_notes[0][i]!=Bee[0][i]){
       error += 600;
       fullcombo=false;
+      Serial.println("MISS");
     }
   }
 
-  
   Serial.print("Error:");
   Serial.println(error);
   float errp = (float)error/4800;
@@ -171,32 +186,41 @@ int judge(int s_time){
   Serial.println(errp);
   float per = 1-errp;
   Serial.print("%:");
-  Serial.println(per);
+  Serial.println(per*100);
   if(per>=0.95){
+    Serial.println("RANK:S");
     return 6; //RANK S
   }else if(per>=0.90){
+    Serial.println("RANK:AAA");
     return 5; //RANK AAA
   }else if(per>=0.85){
+    Serial.println("RANK:AA");
     return 4;  //RANK AA
   }else if(per>=0.80){
+    Serial.println("RANK:A");
     return 3;  //RANK A
   }else if(per>=0.70){
+    Serial.println("RANK:B");
     return 2;  //RANK B
   }else if(per>=0.60){
+    Serial.println("RANK:C");
     return 1;  //RANK C
   }else{
+    Serial.println("RANK:F");
     return 0;  //RANK F
   }
 }
 
 void music(int music){
   if(fullcombo==true){
+    delay(195);
+    Serial.println("FULLCOMBO!!!");
     tone(PINSP,NOTE_E6,100) ;
-    delay(295);
+    delay(95);
     tone(PINSP,NOTE_G6,100) ;
-    delay(295);
+    delay(95);
     tone(PINSP,NOTE_C7,100) ;
-    delay(295);
+    delay(95);
   }
   delay(1200);
   switch(music){
@@ -248,25 +272,65 @@ void music(int music){
 //      break;
     case 1:
       tone(PINSP,NOTE_C6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_E6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_G6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_C7,100) ;
-      delay(295);      
+      delay(195);      
       tone(PINSP,NOTE_C6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_E6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_G6,100) ;
-      delay(295);
+      delay(195);
       tone(PINSP,NOTE_C7,100) ;
-      delay(295);
+      delay(195);
       break;
     case 0:
-    
-      break;
+      tone(PINSP,NOTE_G6,50) ;
+      delay(45);
+      tone(PINSP,NOTE_F6,50) ;
+      delay(45);
+      tone(PINSP,NOTE_E6,50) ;
+      delay(45);
+      tone(PINSP,NOTE_D6,50) ;
+      delay(45);
+      tone(PINSP,NOTE_C6,50) ;
+      delay(45);
+      tone(PINSP,NOTE_B5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_A5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_G5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_F5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_E5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_D5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_C5,50) ;
+      delay(45);
+      tone(PINSP,NOTE_B4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_A4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_G4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_F4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_E4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_D4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_C4,50) ;
+      delay(45);
+      tone(PINSP,NOTE_B3,50) ;
+      delay(45);
+      tone(PINSP,NOTE_A3,500) ;
+      delay(495);
   }
   
 }
