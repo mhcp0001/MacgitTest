@@ -1,4 +1,5 @@
 #include <pitches.h> // < > で囲む
+#include<Servo.h>
 #include <Wire.h>
 #include "rgb_lcd.h"
 
@@ -6,8 +7,10 @@
 #define BEAT 30 //音の長さを指定
 #define PRESS 1000
 
+Servo Motor; 
 rgb_lcd lcd;
 const int buttonPin = 7;
+const int motorPin = 5;
 const int C_pin = 1;
 const int D_pin = 2;
 const int E_pin = 3;
@@ -20,6 +23,7 @@ int play_notes[2][8];
 unsigned long time_m = 0;
 unsigned long push_time = 0;
 int push = 0;
+int shaft = 90;
 int C_value = 0;
 int D_value = 0;
 int E_value = 0;
@@ -37,6 +41,8 @@ void setup() {
   lcd.begin(16, 2);
   // initialize digital pin 8 as an output. 
   pinMode(buttonPin, INPUT);
+  Motor.attach(motorPin);
+  Motor.write(shaft);
 }
 
 
@@ -48,6 +54,8 @@ void loop() {
   E_value = analogRead( E_pin );
   F_value = analogRead( F_pin );
   G_value = analogRead( G_pin );
+
+  Motor.write(shaft);
 
   //analogWrite(led_pin, C_value/4 );
   //Serial.println( byte(C_value/4) );
@@ -117,6 +125,7 @@ void game(){
   if(start == false){ //開始時メトロノーム音、スタート時の時刻
     Serial.print("Game Start!:");
     Serial.println(time_m);
+    lcd.setCursor(0, 0);
     lcd.print("Game Start!:");
     lcd.setCursor(12, 0);
     delay(595);
@@ -161,7 +170,7 @@ void game(){
     for(int i=0;i<8;i++){
       Serial.println(play_notes[1][i]);
     }
-
+    delay(1000);
     lcd.setCursor(0, 0);
     lcd.print("                ");
     lcd.setCursor(0, 1);
@@ -170,6 +179,7 @@ void game(){
     fullcombo=true;
     note_number = 0;
     mode = false;
+    Motor.write(90);
   }
 }
 
@@ -202,30 +212,37 @@ int judge(int s_time){
   if(per>=0.95){
     Serial.println("RANK:S");
     lcd.print("  S RANK CLEAR!!");
+    Motor.write(130);
     return 6; //RANK S
   }else if(per>=0.90){
     Serial.println("RANK:AAA");
     lcd.print("AAA RANK CLEAR!!");
+    Motor.write(130);
     return 5; //RANK AAA
   }else if(per>=0.85){
     Serial.println("RANK:AA");
     lcd.print(" AA RANK CLEAR!!");
+    Motor.write(130);
     return 4;  //RANK AA
   }else if(per>=0.80){
     Serial.println("RANK:A");
     lcd.print("  A RANK CLEAR!!");
+    Motor.write(130);
     return 3;  //RANK A
   }else if(per>=0.70){
     Serial.println("RANK:B");
     lcd.print("  B RANK CLEAR!!");
+    Motor.write(130);
     return 2;  //RANK B
   }else if(per>=0.60){
     Serial.println("RANK:C");
     lcd.print("  C RANK CLEAR!!");
+    Motor.write(130);
     return 1;  //RANK C
   }else{
     Serial.println("RANK:F");
     lcd.print("  FAILED");
+    Motor.write(90);
     return 0;  //RANK F
   }
 }
