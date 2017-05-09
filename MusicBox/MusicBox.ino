@@ -1,5 +1,5 @@
 #include <pitches.h> // < > で囲む
-#include<Servo.h>
+#include <VarSpeedServo.h> 
 #include <Wire.h>
 #include "rgb_lcd.h"
 
@@ -7,7 +7,7 @@
 #define BEAT 30 //音の長さを指定
 #define PRESS 1000
 
-Servo Motor; 
+VarSpeedServo Motor; 
 rgb_lcd lcd;
 const int buttonPin = 7;
 const int motorPin = 5;
@@ -24,6 +24,7 @@ unsigned long time_m = 0;
 unsigned long push_time = 0;
 int push = 0;
 int shaft = 90;
+int m_speed = 60;
 int C_value = 0;
 int D_value = 0;
 int E_value = 0;
@@ -42,7 +43,7 @@ void setup() {
   // initialize digital pin 8 as an output. 
   pinMode(buttonPin, INPUT);
   Motor.attach(motorPin);
-  Motor.write(shaft);
+  Motor.write(shaft,m_speed,true);
 }
 
 
@@ -55,7 +56,7 @@ void loop() {
   F_value = analogRead( F_pin );
   G_value = analogRead( G_pin );
 
-  Motor.write(shaft);
+  Motor.write(shaft,m_speed,true);
 
   //analogWrite(led_pin, C_value/4 );
   //Serial.println( byte(C_value/4) );
@@ -120,6 +121,7 @@ void game(){
   static boolean start = false;
   static int note_number = 0;
   static int start_time = 0;
+  static int last_time = 0;
   static boolean long_note = false;
   
   if(start == false){ //開始時メトロノーム音、スタート時の時刻
@@ -150,11 +152,16 @@ void game(){
     lcd.setCursor(0, 0);
     lcd.print("                ");
     }else if(push!=0 && long_note==false){ //押した瞬間の処理(どれをいつ押したか)
-    play_notes[0][note_number]=push;
-    play_notes[1][note_number]=time_m-start_time-Bee[1][note_number]; 
-    long_note=true;
-    note_number++;
-  }else if(push==0){ //鍵盤から指を離した際の処理
+      int i = time_m - last_time;
+      Serial.println(i);
+      if(i>80 || last_time == 0){
+        play_notes[0][note_number]=push;
+        play_notes[1][note_number]=time_m-start_time-Bee[1][note_number]; 
+        long_note=true;
+        last_time=time_m;
+        note_number++;
+      }
+    }else if(push==0){ //鍵盤から指を離した際の処理
     long_note=false;
   }
 
@@ -170,7 +177,7 @@ void game(){
     for(int i=0;i<8;i++){
       Serial.println(play_notes[1][i]);
     }
-    delay(1000);
+
     lcd.setCursor(0, 0);
     lcd.print("                ");
     lcd.setCursor(0, 1);
@@ -179,7 +186,7 @@ void game(){
     fullcombo=true;
     note_number = 0;
     mode = false;
-    Motor.write(90);
+    Motor.write(shaft,m_speed,true);
   }
 }
 
@@ -212,37 +219,31 @@ int judge(int s_time){
   if(per>=0.95){
     Serial.println("RANK:S");
     lcd.print("  S RANK CLEAR!!");
-    Motor.write(130);
     return 6; //RANK S
   }else if(per>=0.90){
     Serial.println("RANK:AAA");
     lcd.print("AAA RANK CLEAR!!");
-    Motor.write(130);
     return 5; //RANK AAA
   }else if(per>=0.85){
     Serial.println("RANK:AA");
     lcd.print(" AA RANK CLEAR!!");
-    Motor.write(130);
     return 4;  //RANK AA
   }else if(per>=0.80){
     Serial.println("RANK:A");
     lcd.print("  A RANK CLEAR!!");
-    Motor.write(130);
     return 3;  //RANK A
   }else if(per>=0.70){
     Serial.println("RANK:B");
     lcd.print("  B RANK CLEAR!!");
-    Motor.write(130);
     return 2;  //RANK B
   }else if(per>=0.60){
     Serial.println("RANK:C");
     lcd.print("  C RANK CLEAR!!");
-    Motor.write(130);
     return 1;  //RANK C
   }else{
     Serial.println("RANK:F");
     lcd.print("  FAILED");
-    Motor.write(90);
+    Motor.write(90,m_speed,true);
     return 0;  //RANK F
   }
 }
@@ -292,6 +293,8 @@ void music(int music){
       delay(145);
       tone(PINSP,NOTE_C8,100) ;
       delay(145);
+      Motor.write(130,m_speed,true);
+      delay(5000);
       break;
 
     case 5:
@@ -324,6 +327,8 @@ void music(int music){
       delay(195);
       tone(PINSP,NOTE_C7,100) ;
       delay(195);
+      Motor.write(130,m_speed,true);
+      delay(5000);
       break;
     case 0:
       tone(PINSP,NOTE_G6,50) ;
